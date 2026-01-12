@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>A Celestial Celebration</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@200;400&family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --gold: #e5c07b;
+            --white: #ffffff;
+            --bg: #030304;
+        }
+
+        * { 
+            -webkit-tap-highlight-color: transparent; 
+            box-sizing: border-box; 
+            user-select: none;
+            touch-action: none;
+        }
+
+        body, html {
+            margin: 0; padding: 0;
+            width: 100%; height: 100%;
+            background-color: var(--bg);
+            color: var(--white);
+            font-family: 'Montserrat', sans-serif;
+            overflow: hidden;
+        }
+
+        /* Cinematic Background */
+        #bg-canvas {
+            position: fixed;
+            inset: 0;
+            z-index: 1;
+        }
+
+        .vignette {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(circle, transparent 20%, rgba(0,0,0,0.8) 100%);
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        /* Layers */
+        .layer {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            pointer-events: none;
+            text-align: center;
+        }
+
+        /* Cinematic Intro Text */
+        .intro-text {
+            font-size: clamp(1rem, 5vw, 1.5rem);
+            font-weight: 200;
+            letter-spacing: 0.8em;
+            text-transform: uppercase;
+            opacity: 0;
+            filter: blur(10px);
+        }
+
+        .animate-intro {
+            animation: bloom 5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+
+        @keyframes bloom {
+            0% { opacity: 0; transform: scale(0.9); filter: blur(20px); letter-spacing: 1.2em; }
+            40% { opacity: 1; filter: blur(0px); transform: scale(1); letter-spacing: 0.8em; }
+            70% { opacity: 1; filter: blur(0px); transform: scale(1); }
+            100% { opacity: 0; transform: scale(1.1); filter: blur(10px); }
+        }
+
+        /* Glassmorphism Button */
+        .btn-container {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: all 1.5s cubic-bezier(0.16, 1, 0.3, 1);
+            pointer-events: auto;
+        }
+
+        .btn-container.active { opacity: 1; transform: translateY(0); }
+
+        .glass-btn {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            color: var(--white);
+            padding: 22px 60px;
+            font-size: 0.75rem;
+            letter-spacing: 5px;
+            text-transform: uppercase;
+            border-radius: 100px;
+            cursor: pointer;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            transition: all 0.3s;
+        }
+
+        .glass-btn:active { transform: scale(0.94); background: rgba(255,255,255,0.08); }
+
+        /* Enhanced Game Stars */
+        .star-entity {
+            position: absolute;
+            width: 80px; height: 80px;
+            z-index: 50;
+            display: flex; justify-content: center; align-items: center;
+            pointer-events: auto;
+        }
+
+        .star-entity svg {
+            width: 30px; height: 30px;
+            filter: drop-shadow(0 0 15px var(--gold));
+            transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        /* Final Reveal Panel */
+        .final-panel {
+            background: rgba(3, 3, 4, 0.9);
+            backdrop-filter: blur(10px);
+            opacity: 0;
+            transition: opacity 2s ease;
+            flex-direction: column;
+            padding: 40px;
+        }
+
+        .final-panel.visible { opacity: 1; pointer-events: auto; }
+
+        /* Gold/White Typography */
+        .wish-box {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: all 2.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .gold-title {
+            font-family: 'Playfair Display', serif;
+            font-style: italic;
+            color: var(--gold);
+            font-size: clamp(2.5rem, 10vw, 4rem);
+            display: block;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #f9e29d 0%, #d4af37 50%, #f9e29d 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 10px 20px rgba(0,0,0,0.3));
+        }
+
+        .white-sub {
+            color: var(--white);
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 200;
+            font-size: 1.2rem;
+            letter-spacing: 4px;
+            opacity: 0.9;
+        }
+
+        .hint-text {
+            font-size: 0.8rem;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.6);
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        #flash-overlay {
+            position: fixed;
+            inset: 0;
+            background: #fff;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="flash-overlay"></div>
+    <div class="vignette"></div>
+    <canvas id="bg-canvas"></canvas>
+
+    <div class="layer"><div id="intro" class="intro-text">Sughamm ahnoii..</div></div>
+
+    <div class="layer">
+        <div id="ui-stage" class="btn-container">
+            <button class="glass-btn" id="trigger-start">Ready ahno?</button>
+        </div>
+    </div>
+
+    <div id="final-panel" class="layer final-panel">
+        <div id="status-msg" class="hint-text"></div>
+        <div id="wish-box" class="wish-box">
+            <span class="gold-title">Happy Birthday</span>
+            <span class="white-sub">to you dii..</span>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('bg-canvas');
+        const ctx = canvas.getContext('2d');
+        let bgStars = [];
+        const dpr = window.devicePixelRatio || 1;
+
+        function resize() {
+            canvas.width = window.innerWidth * dpr;
+            canvas.height = window.innerHeight * dpr;
+            ctx.scale(dpr, dpr);
+        }
+
+        function initStars() {
+            bgStars = Array(80).fill().map(() => ({
+                x: Math.random() * window.innerWidth,
+                y: Math.random() * window.innerHeight,
+                size: Math.random() * 1.5,
+                o: Math.random(),
+                speed: Math.random() * 0.1 + 0.05
+            }));
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+            bgStars.forEach(s => {
+                ctx.fillStyle = `rgba(255,255,255,${s.o})`;
+                ctx.beginPath();
+                ctx.arc(s.x, s.y, s.size, 0, Math.PI*2);
+                ctx.fill();
+                s.y -= s.speed;
+                if(s.y < 0) s.y = window.innerHeight;
+            });
+            requestAnimationFrame(draw);
+        }
+
+        window.addEventListener('resize', resize);
+        resize(); initStars(); draw();
+
+        setTimeout(() => document.getElementById('intro').classList.add('animate-intro'), 800);
+        setTimeout(() => document.getElementById('ui-stage').classList.add('active'), 5500);
+
+        const startBtn = document.getElementById('trigger-start');
+        startBtn.onclick = () => {
+            document.getElementById('ui-stage').classList.remove('active');
+            setTimeout(() => spawnWave(2), 600); 
+        };
+
+        let wave = 1;
+        let caught = 0;
+
+        function spawnWave(speed) {
+            caught = 0;
+            for(let i=0; i<5; i++) setTimeout(() => createStar(speed), i * 250);
+        }
+
+        function createStar(speed) {
+            const el = document.createElement('div');
+            el.className = 'star-entity';
+            const x = Math.random() * (window.innerWidth - 100) + 50;
+            const y = Math.random() * (window.innerHeight - 150) + 75;
+            el.style.left = x + 'px';
+            el.style.top = y + 'px';
+            
+            let dx = (Math.random() - 0.5) * speed;
+            let dy = (Math.random() - 0.5) * speed;
+
+            const move = () => {
+                let curX = parseFloat(el.style.left);
+                let curY = parseFloat(el.style.top);
+                if(curX < 20 || curX > window.innerWidth - 80) dx *= -1;
+                if(curY < 60 || curY > window.innerHeight - 100) dy *= -1;
+                el.style.left = (curX + dx) + 'px';
+                el.style.top = (curY + dy) + 'px';
+                if(el.parentElement) requestAnimationFrame(move);
+            };
+
+            el.innerHTML = `<svg viewBox="0 0 24 24"><path fill="#e5c07b" d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>`;
+            
+            el.onpointerdown = (e) => {
+                e.stopPropagation();
+                el.style.pointerEvents = 'none';
+                el.style.transform = 'scale(2) rotate(45deg)';
+                el.style.opacity = '0';
+                setTimeout(() => el.remove(), 400);
+                caught++;
+                if(caught === 5) setTimeout(handleNext, 600);
+            };
+
+            document.body.appendChild(el);
+            move();
+        }
+
+        function handleNext() {
+            const panel = document.getElementById('final-panel');
+            const msg = document.getElementById('status-msg');
+
+            if(wave === 1) {
+                wave = 2;
+                panel.classList.add('visible');
+                msg.innerText = "Ellam pidichalo Kazhiv thanne!";
+                setTimeout(() => {
+                    msg.innerText = "Anaal ithude pidikkk";
+                    setTimeout(() => {
+                        panel.classList.remove('visible');
+                        setTimeout(() => spawnWave(4), 800);
+                    }, 1800);
+                }, 1500);
+            } else {
+                showFinal();
+            }
+        }
+
+        function showFinal() {
+            const flash = document.getElementById('flash-overlay');
+            const panel = document.getElementById('final-panel');
+            const msg = document.getElementById('status-msg');
+            const wishBox = document.getElementById('wish-box');
+
+            flash.style.opacity = '1';
+            setTimeout(() => flash.style.opacity = '0', 600);
+
+            panel.classList.add('visible');
+            msg.innerText = "Did you know today is a special day?";
+            
+            setTimeout(() => {
+                // First phase: The joke
+                msg.innerHTML = "Inu Tuesday ahn... 😭";
+                
+                setTimeout(() => {
+                    // Second phase: The transition
+                    msg.innerHTML = "Inu Tuesday ahn... 😭<br><br><span style='color: var(--gold); text-transform: lowercase; font-style: italic;'>(jokes aside)</span>";
+                    
+                    setTimeout(() => {
+                        // Third phase: Reveal Birthday Wish
+                        msg.style.opacity = '0';
+                        setTimeout(() => {
+                            msg.style.display = 'none';
+                            wishBox.style.opacity = '1';
+                            wishBox.style.transform = 'translateY(0)';
+                        }, 500);
+                    }, 2500);
+                }, 2000);
+            }, 2500);
+        }
+    </script>
+</body>
+</html>
